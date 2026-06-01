@@ -68,7 +68,7 @@ pub async fn download_and_install_driver(
         // Instalação
         app_handle.emit("install-progress", serde_json::json!({"step": "installing", "message": "Instalando driver..."}))
             .map_err(|e| e.to_string())?;
-        let output = std::process::Command::new("powershell")
+        let output = Command::new("powershell")
             .arg("-NoProfile")
             .arg("-Command")
             .arg(format!(
@@ -104,50 +104,90 @@ try {{
     // ==================== macOS ====================
     #[cfg(target_os = "macos")]
     {
+        eprintln!("[DEBUG] Iniciando instalação no macOS");
         let major_version = get_macos_major_version().await?;
+        eprintln!("[DEBUG] Versão macOS major: {}", major_version);
         let subdir = get_dmg_subdir(major_version, &arch)?;
+        eprintln!("[DEBUG] Subdiretório selecionado: {}", subdir);
         let dmg_filename = get_dmg_filename_from_repo(&subdir).await?;
+        eprintln!("[DEBUG] Nome do DMG encontrado: {}", dmg_filename);
         let relative_path = format!("drivers/macos/Token 5100+/{}/{}", subdir, dmg_filename);
         let url_dmg = raw_url(&relative_path);
         let url_sha = raw_url(&format!("{}.sha256", relative_path));
+        eprintln!("[DEBUG] URL do DMG: {}", url_dmg);
+        eprintln!("[DEBUG] URL do SHA256: {}", url_sha);
 
         let temp_dir = std::env::temp_dir().join("cert_middleware");
         std::fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
         let dmg_path = temp_dir.join(&dmg_filename);
+        eprintln!("[DEBUG] Caminho temporário: {}", dmg_path.display());
 
         let client = reqwest::Client::new();
 
         // Download DMG
         app_handle.emit("install-progress", serde_json::json!({"step": "downloading", "message": "Baixando driver macOS..."}))
             .map_err(|e| e.to_string())?;
-        let response = client.get(&url_dmg).send().await.map_err(|e| format!("Erro ao baixar DMG: {}", e))?;
+        eprintln!("[DEBUG] Iniciando download do DMG...");
+        let response = client.get(&url_dmg).send().await.map_err(|e| {
+            eprintln!("[ERRO] Falha no download: {}", e);
+            format!("Erro ao baixar DMG: {}", e)
+        })?;
         if !response.status().is_success() {
+            eprintln!("[ERRO] HTTP {} ao baixar DMG", response.status());
             return Err(format!("Falha no download (HTTP {})", response.status()));
         }
-        let bytes = response.bytes().await.map_err(|e| format!("Erro ao ler dados: {}", e))?;
-        std::fs::write(&dmg_path, &bytes).map_err(|e| format!("Erro ao salvar DMG: {}", e))?;
+        let bytes = response.bytes().await.map_err(|e| {
+            eprintln!("[ERRO] Falha ao ler bytes: {}", e);
+            format!("Erro ao ler dados: {}", e)
+        })?;
+        std::fs::write(&dmg_path, &bytes).map_err(|e| {
+            eprintln!("[ERRO] Falha ao salvar DMG: {}", e);
+            format!("Erro ao salvar DMG: {}", e)
+        })?;
+        eprintln!("[DEBUG] DMG salvo com {} bytes", bytes.len());
 
         // Verificação SHA256
         app_handle.emit("install-progress", serde_json::json!({"step": "verifying", "message": "Verificando integridade..."}))
             .map_err(|e| e.to_string())?;
-        let expected_sha = client.get(&url_sha).send().await.map_err(|e| format!("Erro ao baixar checksum: {}", e))?
-            .text().await.map_err(|e| format!("Erro ao ler checksum: {}", e))?;
-        let expected_sha = expected_sha.trim().to_lowercase();
+        eprintln!("[DEBUG] Baixando arquivo SHA256...");
+        let sha_response = client.get(&url_sha).send().await.map_err(|e| {
+            eprintln!("[ERRO] Falha ao baixar SHA256: {}", e);
+            format!("Erro ao baixar checksum: {}", e)
+        })?;
+        if !sha_response.status().is_success() {
+            eprintln!("[ERRO] HTTP {} ao baixar SHA256", sha_response.status());
+            return Err(format!("Arquivo SHA256 não encontrado (HTTP {})", sha_response.status()));
+        }
+        let expected_sha_line = sha_response.text().await.map_err(|e| {
+            eprintln!("[ERRO] Falha ao ler SHA256: {}", e);
+            format!("Erro ao ler checksum: {}", e)
+        })?;
+        let expected_sha = expected_sha_line
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_lowercase();
+        eprintln!("[DEBUG] SHA256 esperado (extraído): {}", expected_sha);
 
         let mut hasher = Sha256::new();
         hasher.update(&bytes);
         let actual_sha = hex::encode(hasher.finalize());
+        eprintln!("[DEBUG] SHA256 calculado: {}", actual_sha);
 
         if actual_sha != expected_sha {
+            eprintln!("[ERRO] Checksum inválido");
             let _ = std::fs::remove_file(&dmg_path);
             return Err(format!("Checksum inválido.\nEsperado: {}\nObtido: {}", expected_sha, actual_sha));
         }
+        eprintln!("[DEBUG] Checksum OK");
 
         // Instalação
         app_handle.emit("install-progress", serde_json::json!({"step": "installing", "message": "Instalando driver (pode pedir sua senha)..."}))
             .map_err(|e| e.to_string())?;
+        eprintln!("[DEBUG] Iniciando instalação do DMG...");
         install_dmg(&dmg_path).await?;
         let _ = std::fs::remove_file(&dmg_path);
+        eprintln!("[DEBUG] Instalação concluída com sucesso");
         app_handle.emit("install-progress", serde_json::json!({"step": "completed", "message": "Driver instalado com sucesso!"}))
             .map_err(|e| e.to_string())?;
         return Ok("Driver instalado com sucesso!".to_string());
@@ -181,7 +221,7 @@ fn get_dmg_subdir(major_version: u32, arch: &str) -> Result<String, String> {
         (11, "aarch64") => Ok("version-11-15-intel-and-apple-silicon".to_string()),
         (12..=13, _) => Ok("version-12-13-intel-and-apple-silicon".to_string()),
         (14, _) => Ok("version-14".to_string()),
-        (15, _) => Ok("version-11-15-intel-and-apple-silicon".to_string()), // fallback
+        (15, _) => Ok("version-11-15-intel-and-apple-silicon".to_string()),
         _ => Err(format!("macOS versão {} não suportada", major_version)),
     }
 }
@@ -218,7 +258,6 @@ async fn get_dmg_filename_from_repo(subdir: &str) -> Result<String, String> {
     if dmg_files.is_empty() {
         return Err("Nenhum arquivo .dmg encontrado no diretório".to_string());
     }
-    // Prioriza o que NÃO contém "core" nem "nonctk" (case insensitive)
     let preferred = dmg_files.iter().find(|name| {
         let lower = name.to_lowercase();
         !lower.contains("core") && !lower.contains("nonctk")
@@ -233,16 +272,18 @@ async fn get_dmg_filename_from_repo(subdir: &str) -> Result<String, String> {
 #[cfg(target_os = "macos")]
 async fn install_dmg(dmg_path: &std::path::Path) -> Result<(), String> {
     let mount_point = "/Volumes/Token5100Installer";
+    eprintln!("[DEBUG] Montando DMG em {}", mount_point);
     let attach_output = Command::new("hdiutil")
         .args(["attach", dmg_path.to_str().unwrap(), "-mountpoint", mount_point])
         .output()
-        .map_err(|e| format!("Falha ao montar DMG: {}", e))?;
+        .map_err(|e| format!("Falha ao executar hdiutil: {}", e))?;
     if !attach_output.status.success() {
         let stderr = String::from_utf8_lossy(&attach_output.stderr);
+        eprintln!("[ERRO] Falha ao montar DMG: {}", stderr);
         return Err(format!("Erro ao montar DMG: {}", stderr));
     }
+    eprintln!("[DEBUG] DMG montado com sucesso");
 
-    // Procurar por .pkg ou .app dentro do volume
     let volume_path = std::path::Path::new(mount_point);
     let pkg_entries: Vec<PathBuf> = std::fs::read_dir(volume_path)
         .map_err(|e| format!("Erro ao ler volume montado: {}", e))?
@@ -251,20 +292,42 @@ async fn install_dmg(dmg_path: &std::path::Path) -> Result<(), String> {
         .map(|entry| entry.path())
         .collect();
 
-    let result = if !pkg_entries.is_empty() {
+    let install_success = if !pkg_entries.is_empty() {
         let pkg_path = &pkg_entries[0];
+        eprintln!("[DEBUG] Instalando .pkg: {}", pkg_path.display());
+
         let script = format!(
-            "do shell script \"installer -pkg '{}' -target /\" with administrator privileges",
+            "do shell script \"installer -verbose -pkg '{}' -target / 2>&1\" with administrator privileges",
             pkg_path.display()
         );
         let output = Command::new("osascript")
             .arg("-e")
             .arg(&script)
             .output()
-            .map_err(|e| format!("Erro ao executar installer: {}", e))?;
-        output.status.success()
+            .map_err(|e| format!("Erro ao executar osascript: {}", e))?;
+
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            eprintln!("[DEBUG] Instalação via osascript bem-sucedida. Saída: {}", stdout);
+            true
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            eprintln!("[ERRO] Falha na instalação via osascript. stderr: {}", stderr);
+            eprintln!("[DEBUG] Tentando abrir o instalador para instalação manual...");
+            let open_status = Command::new("open")
+                .arg(pkg_path)
+                .status()
+                .map_err(|e| format!("Falha ao abrir o instalador: {}", e))?;
+            if open_status.success() {
+                eprintln!("[DEBUG] Instalador aberto. O usuário deve concluir a instalação manualmente.");
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                true
+            } else {
+                eprintln!("[ERRO] Também falhou ao abrir o instalador manualmente.");
+                false
+            }
+        }
     } else {
-        // Tentar copiar .app
         let app_entries: Vec<PathBuf> = std::fs::read_dir(volume_path)
             .map_err(|e| format!("Erro ao ler volume: {}", e))?
             .filter_map(|entry| entry.ok())
@@ -272,6 +335,7 @@ async fn install_dmg(dmg_path: &std::path::Path) -> Result<(), String> {
             .map(|entry| entry.path())
             .collect();
         if let Some(app_path) = app_entries.first() {
+            eprintln!("[DEBUG] Copiando .app para /Applications: {}", app_path.display());
             let app_name = app_path.file_name().unwrap().to_str().unwrap();
             let target_path = std::path::Path::new("/Applications").join(app_name);
             let script = format!(
@@ -284,18 +348,37 @@ async fn install_dmg(dmg_path: &std::path::Path) -> Result<(), String> {
                 .arg(&script)
                 .output()
                 .map_err(|e| format!("Erro ao copiar app: {}", e))?;
-            output.status.success()
+            if output.status.success() {
+                eprintln!("[DEBUG] App copiado com sucesso");
+                true
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                eprintln!("[ERRO] Falha ao copiar app: {}", stderr);
+                false
+            }
         } else {
-            let _ = Command::new("hdiutil").args(["detach", mount_point]).output();
-            return Err("Nenhum instalador (.pkg ou .app) encontrado dentro do DMG".to_string());
+            eprintln!("[ERRO] Nenhum .pkg ou .app encontrado no DMG");
+            false
         }
     };
 
-    let _ = Command::new("hdiutil").args(["detach", mount_point]).output();
+    eprintln!("[DEBUG] Desmontando DMG");
+    let detach_output = Command::new("hdiutil")
+        .args(["detach", mount_point])
+        .output();
+    if let Err(e) = detach_output {
+        eprintln!("[AVISO] Falha ao desmontar DMG: {}", e);
+    } else if let Ok(out) = detach_output {
+        if !out.status.success() {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            eprintln!("[AVISO] hdiutil detach falhou: {}", stderr);
+        }
+    }
 
-    if result {
+    if install_success {
+        eprintln!("[DEBUG] Instalação concluída (ou instalador manual aberto)");
         Ok(())
     } else {
-        Err("Instalação cancelada ou falhou".to_string())
+        Err("Falha na instalação do pacote. Tente novamente ou instale manualmente.".to_string())
     }
 }

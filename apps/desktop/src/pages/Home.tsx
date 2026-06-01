@@ -69,12 +69,13 @@ export function HomePage() {
     };
   }, []);
 
+  // Inicia a instalação para Windows ou macOS
   useEffect(() => {
     if (
       state === "completed" &&
       environment &&
       installState === "idle" &&
-      isWindows
+      (isWindows || isMac)
     ) {
       setShowModal(true);
       setInstallState("downloading");
@@ -104,7 +105,7 @@ export function HomePage() {
           setInstallState("error");
         });
     }
-  }, [state, environment, installState, isWindows]);
+  }, [state, environment, installState, isWindows, isMac]);
 
   const retryInstallation = () => {
     if (!environment) return;
@@ -170,7 +171,7 @@ export function HomePage() {
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                className="mt-2 cursor-pointer rounded-lg border px-4 py-2"
+                className="mt-2 cursor-pointer rounded-lg border border-[#f2f1ed] px-4 py-2"
                 onClick={runDetection}
               >
                 Detect System
@@ -196,77 +197,22 @@ export function HomePage() {
               initial="hidden"
               animate="visible"
             >
-              <Card>
-                <CardHeader>
-                  <motion.div variants={itemVariants}>
-                    <CardTitle>Status do Ambiente</CardTitle>
-                  </motion.div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-start justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">Sistema Operacional</p>
-                      <p className="text-sm text-muted-foreground">
-                        {environment.os}
-                      </p>
-                    </div>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  </motion.div>
-
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-start justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">Arquitetura</p>
-                      <p className="text-sm text-muted-foreground">
-                        {environment.architecture}
-                      </p>
-                    </div>
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  </motion.div>
-
-                  <motion.div
-                    variants={itemVariants}
-                    className="flex items-start justify-between"
-                  >
-                    <div>
-                      <p className="font-medium">Token</p>
-                      <p className="text-sm text-muted-foreground">
-                        {environment.token}
-                      </p>
-                    </div>
-                    <AlertTriangle className="h-5 w-5 text-amber-500" />
-                  </motion.div>
-
-                  {/* Botão de redetecção (apenas para compatibilidade) */}
-                  <motion.div variants={itemVariants}>
-                    {environment.token === "Not Detected" ? (
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <Button
-                          className="w-full cursor-pointer"
-                          onClick={() => {
-                            setInstallState("idle");
-                            runDetection();
-                          }}
-                        >
-                          Retry Token Detection
-                        </Button>
-                      </motion.div>
-                    ) : (
-                      <Button variant="outline" className="w-full">
-                        Token Detectado
-                      </Button>
-                    )}
-                  </motion.div>
-                </CardContent>
-              </Card>
+              {isWindows && (
+                <WindowsStatusCard
+                  environment={environment}
+                  runDetection={runDetection}
+                  setInstallState={setInstallState}
+                  itemVariants={itemVariants}
+                />
+              )}
+              {isMac && (
+                <MacStatusCard
+                  environment={environment}
+                  runDetection={runDetection}
+                  setInstallState={setInstallState}
+                  itemVariants={itemVariants}
+                />
+              )}
             </motion.div>
           )}
 
@@ -288,14 +234,14 @@ export function HomePage() {
         </div>
       </motion.main>
 
-      {/* Modal de instalação para Windows (blur) */}
+      {/* Modal – versão para Windows (exatamente igual ao original) */}
       <AnimatePresence>
         {showModal && isWindows && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs cursor-pointer"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm cursor-pointer"
             onClick={closeModal}
           >
             <motion.div
@@ -304,6 +250,125 @@ export function HomePage() {
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="relative w-full max-w-md rounded-xl bg-background p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {(installState === "success" || installState === "error") && (
+                <button
+                  onClick={closeModal}
+                  className="absolute right-4 top-4 rounded-full p-1 hover:bg-muted cursor-pointer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+
+              {/* Downloading */}
+              {installState === "downloading" && (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      Baixando driver...
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {installMessage ||
+                        "A transferir ficheiro do repositório."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Verifying */}
+              {installState === "verifying" && (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      Verificando integridade...
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {installMessage}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Installing */}
+              {installState === "installing" && (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <div>
+                    <h3 className="text-xl font-semibold">
+                      Instalando driver...
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Aguarde enquanto o instalador é executado. A permissão de
+                      administrador será solicitada.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Success */}
+              {installState === "success" && (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <CheckCircle2 className="h-8 w-8 text-green-500" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-green-700 dark:text-green-400">
+                      {installMessage || "Driver instalado com sucesso!"}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Token instalado com sucesso. Se necessário, reinicie o
+                      computador.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
+              {installState === "error" && (
+                <div className="flex flex-col items-center gap-4 text-center">
+                  <AlertTriangle className="h-8 w-8 text-red-500" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-red-700 dark:text-red-400">
+                      Falha na instalação
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {installMessage || "Ocorreu um erro desconhecido."}
+                    </p>
+                  </div>
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Button
+                      onClick={retryInstallation}
+                      variant="outline"
+                      className="cursor-pointer"
+                    >
+                      Tentar novamente
+                    </Button>
+                  </motion.div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* Modal – versão para macOS (estrutura unificada, sem div extra) */}
+        {showModal && isMac && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center cursor-pointer modal-backdrop"
+            onClick={closeModal}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
               {(installState === "success" || installState === "error") && (
@@ -422,6 +487,161 @@ export function HomePage() {
           <span>Open Source</span>
         </div>
       </footer>
+    </div>
+  );
+}
+
+function WindowsStatusCard({
+  environment,
+  runDetection,
+  setInstallState,
+  itemVariants,
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <motion.div variants={itemVariants}>
+          <CardTitle>Status do Ambiente</CardTitle>
+        </motion.div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between"
+        >
+          <div>
+            <p className="font-medium">Sistema Operacional</p>
+            <p className="text-sm text-muted-foreground">{environment.os}</p>
+          </div>
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between"
+        >
+          <div>
+            <p className="font-medium">Arquitetura</p>
+            <p className="text-sm text-muted-foreground">
+              {environment.architecture}
+            </p>
+          </div>
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between"
+        >
+          <div>
+            <p className="font-medium">Token</p>
+            <p className="text-sm text-muted-foreground">{environment.token}</p>
+          </div>
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          {environment.token === "Not Detected" ? (
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.99 }}>
+              <Button
+                className="w-full cursor-pointer"
+                onClick={() => {
+                  setInstallState("idle");
+                  runDetection();
+                }}
+              >
+                Retry Token Detection
+              </Button>
+            </motion.div>
+          ) : (
+            <Button variant="outline" className="w-full">
+              Token Detectado
+            </Button>
+          )}
+        </motion.div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MacStatusCard({
+  environment,
+  runDetection,
+  setInstallState,
+  itemVariants,
+}) {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+      {/* Cabeçalho */}
+      <motion.div variants={itemVariants} className="mb-4">
+        <h3 className="text-lg font-semibold">Status do Ambiente</h3>
+      </motion.div>
+
+      <div className="space-y-6">
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between"
+        >
+          <div>
+            <p className="font-medium">Sistema Operacional</p>
+            <p className="text-sm text-muted-foreground">{environment.os}</p>
+          </div>
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between mt-3"
+        >
+          <div>
+            <p className="font-medium">Arquitetura</p>
+            <p className="text-sm text-muted-foreground">
+              {environment.architecture}
+            </p>
+          </div>
+          <CheckCircle2 className="h-5 w-5 text-green-500" />
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          className="flex items-start justify-between mt-3"
+        >
+          <div>
+            <p className="font-medium">Token</p>
+            <p className="text-sm text-muted-foreground">{environment.token}</p>
+          </div>
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+        </motion.div>
+
+        <motion.div variants={itemVariants}>
+          {environment.token === "Not Detected" ? (
+            <Button
+              className="
+    w-full
+    cursor-pointer
+    bg-black
+    text-white
+    mt-3
+    transition-all
+    duration-200
+    hover:scale-[1.02]
+    hover:bg-zinc-800
+  "
+              variant="default"
+              onClick={() => {
+                setInstallState("idle");
+                runDetection();
+              }}
+            >
+              Retry Token Detection
+            </Button>
+          ) : (
+            <Button variant="outline" className="w-full">
+              Token Detectado
+            </Button>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 }
