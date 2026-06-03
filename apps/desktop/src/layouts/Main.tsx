@@ -1,9 +1,19 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  return <main className="min-h-screen bg-background">{children}</main>;
+  return (
+    <main
+      className="
+        min-h-screen
+        bg-background
+        text-foreground
+      "
+    >
+      {children}
+    </main>
+  );
 }

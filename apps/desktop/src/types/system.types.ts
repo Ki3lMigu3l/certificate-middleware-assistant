@@ -1,5 +1,5 @@
 export interface SystemInfo {
   os: string;
-  version: string;
+  osVersion: string;
   architecture: string;
 }

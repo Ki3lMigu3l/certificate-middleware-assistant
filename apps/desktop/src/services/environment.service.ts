@@ -1,11 +1,11 @@
+import { TAURI_COMMANDS } from "@/shared/constants/tauri-commands";
+import { SystemInfo } from "@/types/system.types";
 import { invoke } from "@tauri-apps/api/core";
 
-export interface SystemInfo {
-  os: string;
-  osVersion: string;
-  architecture: string;
-}
-
 export async function getSystemInfo(): Promise<SystemInfo> {
-  return await invoke<SystemInfo>("get_system_info");
+  try {
+    return await invoke<SystemInfo>(TAURI_COMMANDS.GET_SYSTEM_INFO);
+  } catch (error) {
+    throw new Error("Unable to retrieve system information.");
+  }
 }
