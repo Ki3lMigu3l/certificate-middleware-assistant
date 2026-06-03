@@ -1,7 +1,8 @@
-<div align="center">
-  <img src="docs/banner.png" alt="Certificate Middleware Assistant" width="100%" style="border-radius:15px;"/>
+<div >
+  <img src="docs/banner.png" alt="Certificate Middleware Assistant" width="80%"/>
   <br/>
   <br/>
+</div>
 
 ![Licença MIT](https://img.shields.io/badge/Licença-MIT-22c55e?style=flat-square)
 ![Plataforma](https://img.shields.io/badge/Plataforma-Windows%20%7C%20macOS-0078D4?style=flat-square)
@@ -10,7 +11,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![PRs Bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-22c55e?style=flat-square)
 
-</div>
 
 <br>
 
@@ -28,7 +28,7 @@ A instalação funcionou. O problema nunca foi a falta de uma solução, era a d
 
 O **Certificate Middleware Assistant** nasceu dessa experiência. A ferramenta automatiza a identificação do ambiente e auxilia na instalação da versão compatível do middleware, transformando um processo manual, técnico e demorado em algo muito mais simples.
 
----
+<br>
 
 ## Sobre o Projeto
 
@@ -36,37 +36,23 @@ O **Certificate Middleware Assistant** nasceu dessa experiência. A ferramenta a
 
 Construída com [Tauri v2](https://tauri.app/), entrega uma **experiência nativa e leve** no Windows e macOS, sem o peso de memória e processamento característico de soluções baseadas em Electron.
 
----
+<br>
 
 ## Capturas de Tela
 
 <div align="center">
-  <tr>
-    <td align="center">
-      <i>Screenshot da tela principal</i>
-      <br/>
-        <img src="docs/home.png" alt="Página inicial" width="90%" style="border-radius:10px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
-      <br/><br/>
-        <i>Screenshot da tela principal</i>
-        <br/><br/>
-        <img src="docs/home.png" alt="Página inicial" width="90%" style="border-radius:10px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
-    </td>
-  </tr>
-</div>
-<!-- <div>
   <div>
-    <div align="center" width="50%">
-          <i>Screenshot da tela principal</i>
-      <br/>
-        <img src="docs/windows.png" alt="Certificate Middleware Assistant" width="100%" style="border-radius:10px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
+    <div align="center">
+      <i>Screenshot da tela principal</i>
       <br/><br/>
-        <i>Screenshot da tela principal</i>
-      <br/>
-        <img src="docs/windows.png" alt="Certificate Middleware Assistant" width="100%" style="border-radius:10px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
+        <img src="docs/home.png" alt="Página inicial" width="80%" style="border-radius:15px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
       <br/><br/>
+        <i>Screenshot da tela de Status do Ambiente</i>
+        <br/><br/>
+        <img src="docs/windows.png" alt="Página inicial" width="80%" style="border-radius:15px;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;"/>
     </div>
   </div>
-</div> -->
+</div>
 
 <br>
 
@@ -96,6 +82,8 @@ flowchart TD
 
 </div>
 
+<br>
+
 ## Funcionalidades
 
 | Recurso                      | Descrição                                                                                                                        |
@@ -106,7 +94,7 @@ flowchart TD
 | Gerenciamento de Privilégios | Solicita permissões de administrador apenas quando necessário para a instalação                                                  |
 | Arquitetura Extensível       | Projetada para incorporar novos modelos de token com mínimo esforço de desenvolvimento                                           |
 
----
+<br>
 
 ## Tokens Suportados
 
@@ -120,7 +108,7 @@ flowchart TD
 
 > Quer ver o seu token suportado? [Abra uma issue](https://github.com/Ki3lMigu3l/macos-certificate-middleware-assistant/issues) ou envie um pull request.
 
----
+<br>
 
 ## Requisitos do Sistema
 
@@ -134,7 +122,7 @@ flowchart TD
 | Arquitetura         | x86 (32 bits) e x64 (64 bits) |
 | Privilégios         | Administrador                 |
 
----
+<br>
 
 ### macOS
 
@@ -147,7 +135,7 @@ flowchart TD
 
 > O Pacote de Compatibilidade com o macOS 14.0 Sonoma (CCID) não é necessário após atualização para macOS 14.1 ou superior, conforme orientação oficial da Thales Group.
 
----
+<br>
 
 ## Stack Tecnológica
 
@@ -161,7 +149,7 @@ flowchart TD
 | Ícones            | [Lucide React](https://lucide.dev/)                                                |
 | Build             | [Vite 7](https://vitejs.dev/)                                                      |
 
----
+<br>
 
 ## Como Começar
 
@@ -196,7 +184,7 @@ pnpm tauri build
 
 O binário compilado estará disponível em `src-tauri/target/release/`.
 
----
+<br>
 
 ## Testes
 
@@ -207,7 +195,7 @@ Os testes unitários cobrem a lógica central de detecção de ambiente e instal
 | Windows    | ![](https://img.shields.io/badge/Testado%20e%20funcionando-22c55e?style=flat-square) |
 | macOS      | ![](https://img.shields.io/badge/Testado%20e%20funcionando-22c55e?style=flat-square) |
 
----
+<br>
 
 ## Roadmap
 
@@ -220,7 +208,7 @@ Os testes unitários cobrem a lógica central de detecção de ambiente e instal
 - [ ] Pipeline de release automatizado (`.dmg` / `.exe`)
 - [ ] Mecanismo de atualização automática
 
----
+<br>
 
 ## Contribuindo
 
@@ -249,7 +237,7 @@ git push origin feature/novo-token
 
 Novas funcionalidades devem estar cobertas por testes unitários antes do envio.
 
----
+<br>
 
 ## Licença
 
