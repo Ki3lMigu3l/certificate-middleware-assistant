@@ -128,4 +128,3 @@ steps:
         release-assets/* `
         --title "Certificate Middleware Assistant ${{ github.ref_name }}" `
         --notes-file release-notes.md
-
