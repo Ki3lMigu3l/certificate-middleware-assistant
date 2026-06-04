@@ -5,7 +5,7 @@ use std::process::Command;
 use crate::models::macos_version::MacOsVersion;
 
 const RAW_BASE: &str =
-    "https://raw.githubusercontent.com/Ki3lMigu3l/macos-certificate-middleware-assistant/main";
+    "https://raw.githubusercontent.com/ezequielnascimento-ofc/certificate-middleware-assistant/main";
 
 fn raw_url(relative_path: &str) -> String {
     let encoded = relative_path
@@ -286,7 +286,7 @@ fn get_dmg_subdir(major_version: u32, arch: &str) -> Result<String, String> {
 async fn get_dmg_filename_from_repo(subdir: &str) -> Result<String, String> {
     let encoded_subdir = subdir.replace(" ", "%20").replace("+", "%2B");
     let api_url = format!(
-        "https://api.github.com/repos/Ki3lMigu3l/macos-certificate-middleware-assistant/contents/drivers/macos/Token%205100%2B/{}",
+        "https://api.github.com/repos/ezequielnascimento-ofc/certificate-middleware-assistant/contents/drivers/macos/Token%205100%2B/{}",
         encoded_subdir
     );
     let client = reqwest::Client::new();

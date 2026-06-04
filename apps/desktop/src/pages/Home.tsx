@@ -117,16 +117,16 @@ export function HomePage() {
             </p>
 
             <a
-              href="https://github.com/Ki3lMigu3l/macos-certificate-middleware-assistant"
+              href="https://github.com/ezequielnascimento-ofc/certificate-middleware-assistant"
               target="_blank"
               rel="noopener noreferrer"
               className="
-        text-xs
-        text-muted-foreground
-        transition-colors
-        hover:text-foreground
-        hover:underline
-      "
+                text-xs
+                text-muted-foreground
+                transition-colors
+                hover:text-foreground
+                hover:underline
+              "
             >
               Open Source Project • MIT License
             </a>

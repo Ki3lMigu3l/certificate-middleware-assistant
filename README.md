@@ -11,7 +11,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![PRs Bem-vindos](https://img.shields.io/badge/PRs-bem--vindos-22c55e?style=flat-square)
 
-
 <br>
 
 > _"O melhor software nasce de um problema real, sentido por uma pessoa real."_
@@ -106,7 +105,7 @@ flowchart TD
 | StarSign Crypto (USB-Token S) | G+D              | ![](https://img.shields.io/badge/Planejado-6b7280?style=flat-square) |
 | eToken Pro (Aladdin)          | SafeNet / Thales | ![](https://img.shields.io/badge/Planejado-6b7280?style=flat-square) |
 
-> Quer ver o seu token suportado? [Abra uma issue](https://github.com/Ki3lMigu3l/macos-certificate-middleware-assistant/issues) ou envie um pull request.
+> Quer ver o seu token suportado? [Abra uma issue](https://github.com/ezequielnascimento-ofc/certificate-middleware-assistant/issues) ou envie um pull request.
 
 <br>
 
@@ -163,7 +162,7 @@ flowchart TD
 
 ```bash
 # Clone o repositório
-git clone https://github.com/Ki3lMigu3l/macos-certificate-middleware-assistant.git
+git clone https://github.com/ezequielnascimento-ofc/certificate-middleware-assistant.git
 cd macos-certificate-middleware-assistant/apps/desktop
 
 # Instale as dependências
