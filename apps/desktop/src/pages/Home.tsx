@@ -10,7 +10,6 @@ import { EnvironmentStatusCard } from "@/components/home/EnvironmentStatusCard";
 import { InstallationModal } from "@/components/home/InstallationModal";
 
 import { useInstallation } from "../hooks/useInstallation";
-import { ParticleBackground } from "@/components/home/ParticleBackground";
 
 export function HomePage() {
   const { state, currentStepLabel, environment, runDetection } =
@@ -39,7 +38,6 @@ export function HomePage() {
 
   return (
     <div className="relative min-h-screen">
-      <ParticleBackground />
       <motion.main
         className="flex min-h-screen items-center justify-center px-6"
         initial={{

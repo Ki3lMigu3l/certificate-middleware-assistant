@@ -105,7 +105,7 @@ function ModalContent({ state, message, onRetry }: ContentProps) {
   if (state === InstallState.DOWNLOADING) {
     return (
       <LoadingState
-        title="Baixando driver."
+        title="Preparando instalação"
         description={message ?? "Transferindo ficheiro."}
       />
     );
@@ -113,18 +113,15 @@ function ModalContent({ state, message, onRetry }: ContentProps) {
 
   if (state === InstallState.VERIFYING) {
     return (
-      <LoadingState
-        title="Verificando integridade."
-        description={message ?? ""}
-      />
+      <LoadingState title="Validando segurança" description={message ?? ""} />
     );
   }
 
   if (state === InstallState.INSTALLING) {
     return (
       <LoadingState
-        title="Instalando driver."
-        description="Permissão de administrador será solicitada."
+        title="Configurando o sistema"
+        description="Dependendo do sistema operacional, permissões administrativas podem ser solicitadas."
       />
     );
   }

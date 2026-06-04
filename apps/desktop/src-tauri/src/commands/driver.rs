@@ -2,6 +2,7 @@ use tauri::Emitter;
 use sha2::{Sha256, Digest};
 use std::path::PathBuf;
 use std::process::Command;
+use crate::models::macos_version::MacOsVersion;
 
 const RAW_BASE: &str =
     "https://raw.githubusercontent.com/Ki3lMigu3l/macos-certificate-middleware-assistant/main";
@@ -13,12 +14,33 @@ fn raw_url(relative_path: &str) -> String {
     format!("{}/{}", RAW_BASE, encoded)
 }
 
+fn normalize_architecture(arch: &str) -> String {
+    match arch.to_lowercase().as_str() {
+        "aarch64" | "arm64" => "arm64".to_string(),
+
+        "amd64" | "x64" | "x86_64" => {
+            "x86_64".to_string()
+        }
+
+        "x86" | "i386" | "i686" => {
+            "x86".to_string()
+        }
+
+        other => other.to_string(),
+    }
+}
+
 #[tauri::command]
 pub async fn download_and_install_driver(
     arch: String,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
-    println!("[INFO] Instalação solicitada para arch: {}", arch);
+let arch = normalize_architecture(&arch);
+
+println!(
+    "[INFO] Instalação solicitada para arquitetura: {}",
+    arch
+);
 
     // ==================== WINDOWS ====================
     #[cfg(target_os = "windows")]
@@ -40,7 +62,7 @@ pub async fn download_and_install_driver(
         let client = reqwest::Client::new();
 
         // Download
-        app_handle.emit("install-progress", serde_json::json!({"step": "downloading", "message": "Baixando driver..."}))
+        app_handle.emit("install-progress", serde_json::json!({"step": "downloading", "message": "O pacote oficial está sendo baixado e armazenado temporariamente."}))
             .map_err(|e| e.to_string())?;
         let response = client.get(&url_exe).send().await.map_err(|e| format!("Erro ao baixar driver: {}", e))?;
         if !response.status().is_success() {
@@ -50,7 +72,7 @@ pub async fn download_and_install_driver(
         std::fs::write(&exe_path, &bytes).map_err(|e| format!("Erro ao salvar arquivo: {}", e))?;
 
         // Verificação SHA256
-        app_handle.emit("install-progress", serde_json::json!({"step": "verifying", "message": "Verificando integridade..."}))
+        app_handle.emit("install-progress", serde_json::json!({"step": "verifying", "message": "Estamos verificando a integridade do arquivo antes da instalação."}))
             .map_err(|e| e.to_string())?;
         let expected_sha = client.get(&url_sha).send().await.map_err(|e| format!("Erro ao baixar checksum: {}", e))?
             .text().await.map_err(|e| format!("Erro ao ler checksum: {}", e))?;
@@ -105,9 +127,18 @@ try {{
     #[cfg(target_os = "macos")]
     {
         eprintln!("[DEBUG] Iniciando instalação no macOS");
-        let major_version = get_macos_major_version().await?;
-        eprintln!("[DEBUG] Versão macOS major: {}", major_version);
-        let subdir = get_dmg_subdir(major_version, &arch)?;
+let macos_version =
+    get_macos_version().await?;
+eprintln!(
+    "[DEBUG] macOS {}.{}.{}",
+    macos_version.major,
+    macos_version.minor,
+    macos_version.patch
+);
+        let subdir = get_dmg_subdir(
+    macos_version.major,
+    &arch,
+)?;
         eprintln!("[DEBUG] Subdiretório selecionado: {}", subdir);
         let dmg_filename = get_dmg_filename_from_repo(&subdir).await?;
         eprintln!("[DEBUG] Nome do DMG encontrado: {}", dmg_filename);
@@ -199,18 +230,43 @@ try {{
 
 // ==================== FUNÇÕES AUXILIARES PARA macOS ====================
 #[cfg(target_os = "macos")]
-async fn get_macos_major_version() -> Result<u32, String> {
+async fn get_macos_version() -> Result<MacOsVersion, String> {
     let output = Command::new("sw_vers")
         .arg("-productVersion")
         .output()
-        .map_err(|e| format!("Falha ao obter versão do macOS: {}", e))?;
-    let version_str = String::from_utf8_lossy(&output.stdout);
-    let parts: Vec<&str> = version_str.trim().split('.').collect();
-    let major = parts.first().unwrap_or(&"0").parse::<u32>().unwrap_or(0);
-    if major == 0 {
-        return Err("Não foi possível determinar a versão do macOS".to_string());
-    }
-    Ok(major)
+        .map_err(|e| {
+            format!(
+                "Falha ao obter versão do macOS: {}",
+                e
+            )
+        })?;
+
+    let version = String::from_utf8_lossy(
+        &output.stdout
+    );
+
+    let parts: Vec<&str> =
+        version.trim().split('.').collect();
+
+    Ok(MacOsVersion {
+        major: parts
+            .first()
+            .unwrap_or(&"0")
+            .parse()
+            .unwrap_or(0),
+
+        minor: parts
+            .get(1)
+            .unwrap_or(&"0")
+            .parse()
+            .unwrap_or(0),
+
+        patch: parts
+            .get(2)
+            .unwrap_or(&"0")
+            .parse()
+            .unwrap_or(0),
+    })
 }
 
 #[cfg(target_os = "macos")]
@@ -218,7 +274,7 @@ fn get_dmg_subdir(major_version: u32, arch: &str) -> Result<String, String> {
     match (major_version, arch) {
         (10, _) => Ok("version-10-intel".to_string()),
         (11, "x86_64") => Ok("version-11-intel".to_string()),
-        (11, "aarch64") => Ok("version-11-15-intel-and-apple-silicon".to_string()),
+        (11, "arm64") => Ok("version-11-15-intel-and-apple-silicon".to_string()),
         (12..=13, _) => Ok("version-12-13-intel-and-apple-silicon".to_string()),
         (14, _) => Ok("version-14".to_string()),
         (15, _) => Ok("version-11-15-intel-and-apple-silicon".to_string()),

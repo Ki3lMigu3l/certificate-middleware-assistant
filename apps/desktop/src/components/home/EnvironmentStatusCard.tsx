@@ -20,24 +20,34 @@ export function EnvironmentStatusCard({ environment, onRetry, isMac }: Props) {
     <Card
       className={
         isMac
-          ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+          ? "rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950"
           : ""
       }
     >
       <CardHeader>
         <CardTitle>Status do Ambiente</CardTitle>
       </CardHeader>
-
       <CardContent className="space-y-6">
-        <StatusRow label="Sistema Operacional" value={environment.os} />
+        <div className={isMac ? "mb-2" : ""}>
+          <StatusRow label="Sistema Operacional" value={environment.os} />
+        </div>
 
-        <StatusRow label="Arquitetura" value={environment.architecture} />
+        <div className={isMac ? "mb-2" : ""}>
+          <StatusRow label="Arquitetura" value={environment.architecture} />
+        </div>
 
         <StatusRow label="Token" value={environment.token} warning />
 
         {environment.token === "Not Detected" ? (
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.99 }}>
-            <Button className="w-full cursor-pointer" onClick={onRetry}>
+          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.99 }}>
+            <Button
+              className={
+                isMac
+                  ? "w-full cursor-pointer bg-black text-white mt-3 transition-all duration-200 hover:scale-[1.02] hover:bg-zinc-800"
+                  : "w-full cursor-pointer "
+              }
+              onClick={onRetry}
+            >
               Retry Token Detection
             </Button>
           </motion.div>
@@ -61,7 +71,7 @@ function StatusRow({ label, value, warning }: StatusRowProps) {
   return (
     <div className="flex items-start justify-between">
       <div>
-        <p className="font-medium">{label}</p>
+        <p className="font-semibold">{label}</p>
 
         <p className="text-sm text-muted-foreground">{value}</p>
       </div>
