@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+
+      - name: Install Dependencies
+        working-directory: apps/desktop
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Application
+        working-directory: apps/desktop
+        run: pnpm tauri build
+
+      - name: Prepare Release Assets
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+
+          New-Item -ItemType Directory -Force -Path release-assets
+
+          Copy-Item `
+            "apps/desktop/src-tauri/target/release/CMA.exe" `
+            "release-assets/CMA-$version-x64.exe"
+
+          $nsis = Get-ChildItem `
+            "apps/desktop/src-tauri/target/release/bundle/nsis/*.exe" |
+            Select-Object -First 1
+
+          Copy-Item `
+            $nsis.FullName `
+            "release-assets/CMA-$version-x64-setup.exe"
+
+          $msi = Get-ChildItem `
+            "apps/desktop/src-tauri/target/release/bundle/msi/*.msi" |
+            Select-Object -First 1
+
+          Copy-Item `
+            $msi.FullName `
+            "release-assets/CMA-$version-x64.msi"
+
+      - name: Generate SHA256 Checksums
+        shell: powershell
+        run: |
+          Get-ChildItem release-assets |
+          ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+            "$hash  $($_.Name)"
+          } |
+          Out-File release-assets/SHA256SUMS.txt -Encoding ascii
+
+      - name: Verify Release Assets
+        shell: powershell
+        run: |
+          Write-Host ""
+          Write-Host "Release Assets:"
+          Write-Host ""
+
+          Get-ChildItem release-assets
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+
+          $notes = @"
+          ## Windows
+
+          ### CMA-$version-x64-setup.exe
+          Instalador recomendado para a maioria dos usuários.
+
+          ### CMA-$version-x64.msi
+          Distribuição corporativa e implantação por equipes de TI.
+
+          ### CMA-$version-x64.exe
+          Versão portátil sem instalação.
+
+          ## Integridade
+
+          O arquivo SHA256SUMS.txt contém os hashes SHA256 dos arquivos publicados.
+
+          ## macOS
+
+          Em breve.
+          "@
+
+          Set-Content release-notes.md $notes
+
+          gh release create "${{ github.ref_name }}" `
+            release-assets/* `
+            --title "Certificate Middleware Assistant ${{ github.ref_name }}" `
+            --notes-file release-notes.md
