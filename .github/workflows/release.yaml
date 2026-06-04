@@ -1,17 +1,17 @@
 name: Release
 
 on:
-push:
-tags:
-- "v*"
+  push:
+    tags:
+      - "v*"
 
 permissions:
-contents: write
+  contents: write
 
 jobs:
-release:
-name: Build and Publish Release
-runs-on: windows-latest
+  release:
+    name: Build and Publish Release
+    runs-on: windows-latest
 
 steps:
   - name: Checkout Repository
