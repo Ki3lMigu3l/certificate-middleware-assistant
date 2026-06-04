@@ -106,19 +106,27 @@ jobs:
           $version = "${{ github.ref_name }}".Replace("v", "")
 
           $notes = @"
-          ## Windows
+          ### Windows
 
-          • CMA-$version-x64-setup.exe → Instalador recomendado para a maioria dos usuários.
+          • Setup (.exe)
+            Instalação recomendada para a maioria dos usuários.
 
-          • CMA-$version-x64.msi → Instalação corporativa e distribuição por equipes de TI.
+          • MSI (.msi)
+            Implantação corporativa e distribuição gerenciada.
 
-          • CMA-$version-x64.exe → Versão portátil, sem instalação.
+          • Portable (.exe)
+            Execução sem necessidade de instalação.
 
-          ## Integridade
+          ##
 
-          • SHA256SUMS.txt → Hashes SHA256 para validação dos arquivos.
+          ### Verificação
 
-          ## macOS
+          • SHA256SUMS.txt
+            Hashes SHA-256 para validação dos arquivos publicados.
+
+          ##
+
+          ### macOS
 
           Em breve.
           "@
