@@ -156,7 +156,7 @@ eprintln!(
         let client = reqwest::Client::new();
 
         // Download DMG
-        app_handle.emit("install-progress", serde_json::json!({"step": "downloading", "message": "Baixando driver macOS..."}))
+        app_handle.emit("install-progress", serde_json::json!({"step": "downloading", "message": "O pacote oficial está sendo baixado e armazenado temporariamente."}))
             .map_err(|e| e.to_string())?;
         eprintln!("[DEBUG] Iniciando download do DMG...");
         let response = client.get(&url_dmg).send().await.map_err(|e| {
@@ -178,7 +178,7 @@ eprintln!(
         eprintln!("[DEBUG] DMG salvo com {} bytes", bytes.len());
 
         // Verificação SHA256
-        app_handle.emit("install-progress", serde_json::json!({"step": "verifying", "message": "Verificando integridade..."}))
+        app_handle.emit("install-progress", serde_json::json!({"step": "verifying", "message": "Estamos verificando a integridade do arquivo antes da instalação."}))
             .map_err(|e| e.to_string())?;
         eprintln!("[DEBUG] Baixando arquivo SHA256...");
         let sha_response = client.get(&url_sha).send().await.map_err(|e| {
